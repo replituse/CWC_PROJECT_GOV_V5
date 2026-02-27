@@ -543,26 +543,39 @@ export function PropertiesPanel() {
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="cplus">CPLUS (opt)</Label>
-                  <Input 
-                    id="cplus" 
-                    type="number" 
-                    placeholder="0.0"
-                    value={element.data?.cplus ?? ''} 
-                    onChange={(e) => handleChange('cplus', e.target.value === '' ? undefined : e.target.value)} 
-                  />
+              <div className="flex items-center space-x-2 my-2">
+                <Checkbox 
+                  id="hasAddedLoss" 
+                  checked={element.data?.hasAddedLoss || false} 
+                  onCheckedChange={(checked) => handleChange('hasAddedLoss', !!checked)}
+                />
+                <Label htmlFor="hasAddedLoss" className="font-semibold text-primary">Include ADDEDLOSS</Label>
+              </div>
+
+              {element.data?.hasAddedLoss && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="cplus">CPLUS (opt)</Label>
+                    <Input 
+                      id="cplus" 
+                      type="number" 
+                      placeholder="0.0"
+                      value={element.data?.cplus ?? ''} 
+                      onChange={(e) => handleChange('cplus', e.target.value === '' ? undefined : e.target.value)} 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cminus">CMINUS (opt)</Label>
+                    <Input 
+                      id="cminus" 
+                      type="number" 
+                      placeholder="0.0"
+                      value={element.data?.cminus ?? ''} 
+                      onChange={(e) => handleChange('cminus', e.target.value === '' ? undefined : e.target.value)} 
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cminus">CMINUS (opt)</Label>
-                  <Input 
-                    id="cminus" 
-                    type="number" 
-                    placeholder="0.0"
-                    value={element.data?.cminus ?? ''} 
-                    onChange={(e) => handleChange('cminus', e.target.value === '' ? undefined : e.target.value)} 
-                  />
-                </div>
+              )}
               </div>
             </>
           )}
@@ -579,26 +592,39 @@ export function PropertiesPanel() {
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="cplus">CPLUS (opt)</Label>
-                  <Input 
-                    id="cplus" 
-                    type="number" 
-                    placeholder="0.0"
-                    value={element.data?.cplus ?? ''} 
-                    onChange={(e) => handleChange('cplus', e.target.value === '' ? undefined : e.target.value)} 
-                  />
+              <div className="flex items-center space-x-2 my-2">
+                <Checkbox 
+                  id="hasAddedLoss" 
+                  checked={element.data?.hasAddedLoss || false} 
+                  onCheckedChange={(checked) => handleChange('hasAddedLoss', !!checked)}
+                />
+                <Label htmlFor="hasAddedLoss" className="font-semibold text-primary">Include ADDEDLOSS</Label>
+              </div>
+
+              {element.data?.hasAddedLoss && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="cplus">CPLUS (opt)</Label>
+                    <Input 
+                      id="cplus" 
+                      type="number" 
+                      placeholder="0.0"
+                      value={element.data?.cplus ?? ''} 
+                      onChange={(e) => handleChange('cplus', e.target.value === '' ? undefined : e.target.value)} 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cminus">CMINUS (opt)</Label>
+                    <Input 
+                      id="cminus" 
+                      type="number" 
+                      placeholder="0.0"
+                      value={element.data?.cminus ?? ''} 
+                      onChange={(e) => handleChange('cminus', e.target.value === '' ? undefined : e.target.value)} 
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cminus">CMINUS (opt)</Label>
-                  <Input 
-                    id="cminus" 
-                    type="number" 
-                    placeholder="0.0"
-                    value={element.data?.cminus ?? ''} 
-                    onChange={(e) => handleChange('cminus', e.target.value === '' ? undefined : e.target.value)} 
-                  />
-                </div>
+              )}
               </div>
             </>
           )}

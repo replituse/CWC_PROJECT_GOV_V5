@@ -50,6 +50,7 @@ interface EdgeData extends Record<string, unknown> {
   numSegments?: number;
   cplus?: number;
   cminus?: number;
+  hasAddedLoss?: boolean;
   comment?: string;
   variable?: boolean;
   distance?: number;

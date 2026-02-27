@@ -221,10 +221,10 @@ export function generateInpFile(nodes: WhamoNode[], edges: WhamoEdge[], autoDown
     addL(` CELERITY ${toFPS(Number(d.celerity), unit, 'celerity')}`);
     addL(` FRICTION ${d.friction}`);
     
-    if ((d.cplus !== undefined && d.cplus !== 0) || (d.cminus !== undefined && d.cminus !== 0)) {
+    if (d.hasAddedLoss) {
       addL(' ADDEDLOSS');
-      if (d.cplus !== undefined && d.cplus !== 0) addL(`     CPLUS ${d.cplus}`);
-      if (d.cminus !== undefined && d.cminus !== 0) addL(`     CMINUS ${d.cminus}`);
+      addL(`     CPLUS ${d.cplus || 0}`);
+      addL(`     CMINUS ${d.cminus || 0}`);
     }
     
     if (d.numSegments !== undefined) {
@@ -242,10 +242,10 @@ export function generateInpFile(nodes: WhamoNode[], edges: WhamoEdge[], autoDown
     addL(`CONDUIT ID ${d.label || e.id} `);
     addL(' DUMMY ');
     addL(` DIAMETER ${toFPS(Number(d.diameter), unit, 'diameter')}`);
-    if ((d.cplus !== undefined && d.cplus !== 0) || (d.cminus !== undefined && d.cminus !== 0)) {
+    if (d.hasAddedLoss) {
       addL(' ADDEDLOSS ');
-      if (d.cplus !== undefined && d.cplus !== 0) addL(` CPLUS ${d.cplus}`);
-      if (d.cminus !== undefined && d.cminus !== 0) addL(` CMINUS ${d.cminus}`);
+      addL(` CPLUS ${d.cplus || 0}`);
+      addL(` CMINUS ${d.cminus || 0}`);
     }
     addL('FINISH');
     addL('');
