@@ -479,10 +479,39 @@ export const useNetworkStore = create<NetworkState>((set, get) => ({
       return edge;
     });
     
+    // Convert all nodes
+    const processedNodes = nodes.map(node => {
+      // If the node is a reservoir and has schedulePoints in its data,
+      // but they aren't in the global hSchedules yet, we should extract them.
+      if (node.type === 'reservoir' && node.data?.mode === 'schedule' && node.data?.schedulePoints) {
+        const schedNum = node.data.hScheduleNumber || 1;
+        const points = node.data.schedulePoints as { time: number; head: number | string }[];
+        
+        // We'll update hSchedules later in the set() call, 
+        // but for now we just ensure the node data is consistent.
+      }
+      return node;
+    });
+
+    // Extract hSchedules from nodes if they exist there (legacy or specific export format)
+    const extractedHSchedules = [...((params as any)?.hSchedules || (params as any)?.content?.hSchedules || (params as any)?.content?.params?.hSchedules || [])];
+    
+    nodes.forEach(node => {
+      if (node.type === 'reservoir' && node.data?.mode === 'schedule' && node.data?.schedulePoints) {
+        const num = node.data.hScheduleNumber || 1;
+        if (!extractedHSchedules.find(s => s.number === num)) {
+          extractedHSchedules.push({
+            number: num,
+            points: node.data.schedulePoints
+          });
+        }
+      }
+    });
+    
     set({ 
-      nodes, 
+      nodes: processedNodes, 
       edges: processedEdges, 
-      hSchedules: (params as any)?.hSchedules || (params as any)?.content?.hSchedules || (params as any)?.content?.params?.hSchedules || [],
+      hSchedules: extractedHSchedules,
       computationalParams: params || get().computationalParams,
       outputRequests: requests || [],
       projectName: projectName || get().projectName,
