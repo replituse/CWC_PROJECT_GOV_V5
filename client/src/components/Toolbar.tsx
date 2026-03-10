@@ -180,7 +180,7 @@ export function Toolbar({ onExport, onSave, onLoad }: { onExport: (fileName?: st
                           const existsNode = outputRequests.some(req => 
                             req.elementId === node.id && 
                             req.requestType === type &&
-                            !req.isElement
+                            req.isElement === false
                           );
                           if (!existsNode) {
                             addOutputRequest({
@@ -197,7 +197,7 @@ export function Toolbar({ onExport, onSave, onLoad }: { onExport: (fileName?: st
                             const existsElem = outputRequests.some(req => 
                               req.elementId === node.id && 
                               req.requestType === type &&
-                              req.isElement
+                              req.isElement === true
                             );
                             if (!existsElem) {
                               addOutputRequest({
@@ -223,6 +223,7 @@ export function Toolbar({ onExport, onSave, onLoad }: { onExport: (fileName?: st
                               elementId: edge.id,
                               elementType: "edge",
                               requestType: type,
+                              isElement: true,
                               variables: [...variables]
                             });
                           }
