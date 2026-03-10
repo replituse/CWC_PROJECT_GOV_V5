@@ -837,7 +837,7 @@ export function Header({
                             const displayLabel = isNodeElement 
                               ? el?.data?.label 
                               : (el?.data?.nodeNumber?.toString() || el?.data?.label || req.elementId);
-                            const prefix = isNodeElement ? 'ELEM' : (req.elementType === 'node' ? 'NODE' : 'ELEM');
+                            const prefix = isNodeElement ? 'ELEM' : (req.elementType === 'node' ? 'NODE' : 'Node');
                             return (
                               <div
                                 key={`${req.id}-${req.requestType}`}

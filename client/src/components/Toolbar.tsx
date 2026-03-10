@@ -366,7 +366,7 @@ export function Toolbar({ onExport, onSave, onLoad }: { onExport: (fileName?: st
                     const displayLabel = isNodeElement 
                       ? el?.data?.label 
                       : (el?.data?.nodeNumber?.toString() || el?.data?.label || req.elementId);
-                    const prefix = isNodeElement ? 'ELEM' : (req.elementType === 'node' ? 'NODE' : 'ELEM');
+                    const prefix = isNodeElement ? 'ELEM' : (req.elementType === 'node' ? 'NODE' : 'Node');
                     return (
                       <div key={`${req.id}-${req.requestType}`} className="flex items-center justify-between text-sm py-1 border-b">
                         <span>{prefix} {displayLabel} ({req.requestType}): {req.variables.join(', ')}</span>
