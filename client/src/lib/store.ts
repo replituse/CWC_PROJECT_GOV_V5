@@ -179,7 +179,7 @@ export const useNetworkStore = create<NetworkState>((set, get) => ({
 
     const SI_TO_FPS = {
       length: 3.28084,
-      diameter: 39.3701,
+      diameter: 3.28084,
       elevation: 3.28084,
       celerity: 3.28084,
       area: 10.7639,
