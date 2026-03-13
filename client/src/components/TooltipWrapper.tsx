@@ -41,10 +41,15 @@ export function DataList({ data, title }: { data: any, title: string }) {
   if (!data) return null;
   
   const globalUnit = useNetworkStore(state => state.globalUnit);
-  const unit = data.unit || globalUnit;
-  
+  const unit = globalUnit;
+
+  const HIDDEN_KEYS = new Set([
+    'label', 'unit', 'type', 'hasAddedLoss', 'hasShape',
+    '_unitCache', 'variable', 'comment', 'mode', 'hScheduleNumber',
+  ]);
+
   const entries = Object.entries(data).filter(([key]) => {
-    if (key === 'label' || key === 'unit' || key === 'type' || key === 'hasAddedLoss' || key === 'hasShape') return false;
+    if (HIDDEN_KEYS.has(key)) return false;
     
     // Surge Tank specific filtering
     if (data.type === 'surgeTank' || data.type_st) {
@@ -75,8 +80,8 @@ export function DataList({ data, title }: { data: any, title: string }) {
       elevation: { SI: 'm', FPS: 'ft' },
       tankTop: { SI: 'm', FPS: 'ft' },
       tankBottom: { SI: 'm', FPS: 'ft' },
-      diameter: { SI: 'm', FPS: 'in' },
-      riserDiameter: { SI: 'm', FPS: 'in' },
+      diameter: { SI: 'm', FPS: 'ft' },
+      riserDiameter: { SI: 'm', FPS: 'ft' },
       length: { SI: 'm', FPS: 'ft' },
       celerity: { SI: 'm/s', FPS: 'ft/s' },
       flow: { SI: 'm³/s', FPS: 'ft³/s' },
@@ -85,7 +90,7 @@ export function DataList({ data, title }: { data: any, title: string }) {
       reservoirElevation: { SI: 'm', FPS: 'ft' },
       riserTop: { SI: 'm', FPS: 'ft' },
       initialWaterLevel: { SI: 'm', FPS: 'ft' },
-      d: { SI: 'm', FPS: 'in' },
+      d: { SI: 'm', FPS: 'ft' },
       a: { SI: 'm²', FPS: 'ft²' },
       cplus: { SI: '', FPS: '' },
       cminus: { SI: '', FPS: '' },
