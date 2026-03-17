@@ -112,21 +112,25 @@ export function PropertiesPanel() {
       }
     });
 
-    // pipeE (Pa ↔ psi) and pipeWT (m ↔ ft) are always converted mathematically,
-    // bypassing the cache to avoid stale values. High-precision output ensures
-    // small values (e.g. Pa→psi) are not rounded to zero.
+    // pipeE (Pa ↔ psi) and pipeWT (m ↔ ft): use cached value when available so that
+    // round-trips (SI→FPS→SI) restore the exact original number. Fall back to
+    // high-precision math conversion only when no cached value exists yet.
     if (element.data?.pipeE != null && element.data.pipeE !== '') {
       const val = parseFloat(String(element.data.pipeE));
       if (!isNaN(val)) {
-        const converted = convertValue(val, currentUnit, newUnit, 'pressure');
-        dataUpdate.pipeE = parseFloat(converted.toPrecision(10));
+        const cachedVal = cachedTarget['pipeE'];
+        dataUpdate.pipeE = cachedVal !== undefined
+          ? cachedVal
+          : parseFloat(convertValue(val, currentUnit, newUnit, 'pressure').toPrecision(10));
       }
     }
     if (element.data?.pipeWT != null && element.data.pipeWT !== '') {
       const val = parseFloat(String(element.data.pipeWT));
       if (!isNaN(val)) {
-        const converted = convertValue(val, currentUnit, newUnit, 'diameter');
-        dataUpdate.pipeWT = parseFloat(converted.toPrecision(10));
+        const cachedVal = cachedTarget['pipeWT'];
+        dataUpdate.pipeWT = cachedVal !== undefined
+          ? cachedVal
+          : parseFloat(convertValue(val, currentUnit, newUnit, 'diameter').toPrecision(10));
       }
     }
 
