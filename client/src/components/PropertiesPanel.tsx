@@ -815,7 +815,7 @@ export function PropertiesPanel() {
                     id="celerity" 
                     type="number" 
                     value={element.data?.celerity || 0} 
-                    onChange={(e) => handleChange('celerity', e.target.value)} 
+                    onChange={(e) => handleChange('celerity', e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -842,8 +842,71 @@ export function PropertiesPanel() {
               </div>
 
               <div className="space-y-3 rounded-md border border-dashed p-3">
+                <Label className="font-medium">Calculate Wave Speed from Pipe Properties</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="pipe-e">Modulus of Elasticity (E, psi)</Label>
+                    <Input
+                      id="pipe-e"
+                      data-testid="input-pipe-e"
+                      type="number"
+                      placeholder="e.g. 30000000"
+                      value={element.data?.pipeE ?? ''}
+                      onChange={(e) => {
+                        handleChange('pipeE', e.target.value);
+                        const E = parseFloat(e.target.value);
+                        const WT = parseFloat(element.data?.pipeWT) || 0;
+                        const wtFt = currentUnit === 'SI' ? WT * 3.28084 : WT;
+                        const diamFt = currentUnit === 'SI'
+                          ? (parseFloat(element.data?.diameter) || 0) * 3.28084
+                          : (parseFloat(element.data?.diameter) || 0);
+                        if (!isNaN(E) && E > 0 && wtFt > 0 && diamFt > 0) {
+                          const cFps = 4720 / Math.sqrt(1 + (3e5 / E) * (diamFt / wtFt));
+                          const c = currentUnit === 'SI' ? cFps / 3.28084 : cFps;
+                          handleChange('celerity', parseFloat(c.toFixed(4)).toString());
+                        }
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="pipe-wt">Wall Thickness (WT, {currentUnit === 'SI' ? 'm' : 'ft'})</Label>
+                    <Input
+                      id="pipe-wt"
+                      data-testid="input-pipe-wt"
+                      type="number"
+                      step="0.001"
+                      placeholder="e.g. 0.02"
+                      value={element.data?.pipeWT ?? ''}
+                      onChange={(e) => {
+                        handleChange('pipeWT', e.target.value);
+                        const WT = parseFloat(e.target.value);
+                        const E = parseFloat(element.data?.pipeE) || 0;
+                        const diamFt = currentUnit === 'SI'
+                          ? (parseFloat(element.data?.diameter) || 0) * 3.28084
+                          : (parseFloat(element.data?.diameter) || 0);
+                        const wtFt = currentUnit === 'SI' ? WT * 3.28084 : WT;
+                        if (!isNaN(WT) && WT > 0 && E > 0 && diamFt > 0) {
+                          const cFps = 4720 / Math.sqrt(1 + (3e5 / E) * (diamFt / wtFt));
+                          const c = currentUnit === 'SI' ? cFps / 3.28084 : cFps;
+                          handleChange('celerity', parseFloat(c.toFixed(4)).toString());
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="rounded bg-muted px-3 py-2 text-sm text-muted-foreground">
+                  <span>c = 4720 / √(1 + (3·10⁵/E) · (D/WT))</span>
+                  {element.data?.celerity && (element.data?.pipeE || element.data?.pipeWT) ? (
+                    <span className="ml-2 font-semibold text-foreground">
+                      = {parseFloat(Number(element.data.celerity).toFixed(4))} {currentUnit === 'SI' ? 'm/s' : 'ft/s'}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="space-y-3 rounded-md border border-dashed p-3">
                 <div className="space-y-2">
-                  <Label htmlFor="mannings-n">Manning's Coefficient (n)</Label>
+                  <Label htmlFor="mannings-n" className="font-medium">Manning's Coefficient (n)</Label>
                   <Input
                     id="mannings-n"
                     data-testid="input-mannings-n"
