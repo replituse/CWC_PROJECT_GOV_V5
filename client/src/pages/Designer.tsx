@@ -593,7 +593,7 @@ function DesignerInner() {
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-hidden relative">
-        {projectState === "empty" && (
+        {projectState === "empty" && nodes.length === 0 && edges.length === 0 && (
           <div className="absolute inset-0 z-[100] flex items-center justify-center pointer-events-none">
             <div className="flex gap-12 pointer-events-auto">
               {/* New Project Card */}
