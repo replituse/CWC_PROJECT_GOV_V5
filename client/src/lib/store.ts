@@ -131,6 +131,7 @@ interface NetworkState {
   setProjectNameError: (error: string | null) => void;
   setLoadedFileHandle: (handle: FileSystemFileHandle | null) => void;
   setGlobalUnit: (unit: UnitSystem) => void;
+  setElementUnit: (id: string, kind: 'node' | 'edge', newUnit: UnitSystem) => void;
   updateHSchedule: (number: number, points: { time: number; head: number | string }[]) => void;
   addHSchedule: (number: number) => void;
   toggleNodeSelection: (nodeId: string) => void;
@@ -332,6 +333,140 @@ export const useNetworkStore = create<NetworkState>((set, get) => ({
       nodes: newNodes as WhamoNode[],
       edges: newEdges as WhamoEdge[]
     });
+  },
+
+  setElementUnit: (id: string, kind: 'node' | 'edge', newUnit: UnitSystem) => {
+    get().saveToHistory();
+    const state = get();
+
+    const SI_TO_FPS = {
+      length: 3.28084,
+      diameter: 3.28084,
+      elevation: 3.28084,
+      celerity: 3.28084,
+      area: 10.7639,
+      flow: 35.3147,
+      pressure: 1 / 6894.76,
+    };
+
+    const convertValue = (value: number | string, from: UnitSystem, to: UnitSystem, type: keyof typeof SI_TO_FPS) => {
+      const numValue = typeof value === 'string' ? parseFloat(value) : value;
+      if (isNaN(numValue)) return value;
+      if (from === to) return numValue;
+      const factor = SI_TO_FPS[type] || 1;
+      const result = to === 'FPS' ? numValue * factor : numValue / factor;
+      return parseFloat(result.toPrecision(10));
+    };
+
+    const fieldMapping: Record<string, keyof typeof SI_TO_FPS> = {
+      length: 'length',
+      diameter: 'diameter',
+      elevation: 'elevation',
+      reservoirElevation: 'elevation',
+      tankTop: 'elevation',
+      tankBottom: 'elevation',
+      topElevation: 'elevation',
+      bottomElevation: 'elevation',
+      distance: 'length',
+      celerity: 'celerity',
+      area: 'area',
+      initialWaterLevel: 'elevation',
+      riserDiameter: 'diameter',
+      riserTop: 'elevation',
+    };
+
+    const cacheableFields = Object.keys(fieldMapping);
+
+    if (kind === 'node') {
+      const newNodes = state.nodes.map(node => {
+        if (node.id !== id) return node;
+        const oldUnit: UnitSystem = (node.data?.unit as UnitSystem) || state.globalUnit;
+        if (oldUnit === newUnit) return node;
+
+        const existingCache: UnitCache = (node.data?._unitCache as UnitCache) || {};
+        const savedForOldUnit: Record<string, any> = {};
+        cacheableFields.forEach(key => {
+          const val = (node.data as any)?.[key];
+          if (val !== undefined && val !== null && val !== '') savedForOldUnit[key] = val;
+        });
+        if (node.data?.schedulePoints) {
+          savedForOldUnit.schedulePoints = JSON.parse(JSON.stringify(node.data.schedulePoints));
+        }
+        const newCache: UnitCache = {
+          ...existingCache,
+          [oldUnit]: { ...(existingCache[oldUnit] || {}), ...savedForOldUnit },
+        };
+
+        const dataUpdate: any = { unit: newUnit };
+        const cachedTarget: Record<string, any> = newCache[newUnit] || {};
+        Object.entries(node.data || {}).forEach(([key, value]) => {
+          if (!fieldMapping[key]) return;
+          const cachedVal = cachedTarget[key];
+          if (cachedVal !== undefined) {
+            dataUpdate[key] = cachedVal;
+          } else if (typeof value === 'number' || (typeof value === 'string' && value.trim() !== '' && !isNaN(Number(value)))) {
+            dataUpdate[key] = convertValue(value as any, oldUnit, newUnit, fieldMapping[key]);
+          }
+        });
+
+        if (node.data?.schedulePoints) {
+          if (cachedTarget.schedulePoints) {
+            dataUpdate.schedulePoints = cachedTarget.schedulePoints;
+          } else {
+            dataUpdate.schedulePoints = (node.data.schedulePoints as any[]).map(p => ({
+              ...p,
+              flow: convertValue(p.flow, oldUnit, newUnit, 'flow'),
+            }));
+          }
+        }
+
+        dataUpdate._unitCache = newCache;
+        return { ...node, data: { ...node.data, ...dataUpdate } };
+      });
+      set({ nodes: newNodes as WhamoNode[] });
+    } else {
+      const newEdges = state.edges.map(edge => {
+        if (edge.id !== id) return edge;
+        const oldUnit: UnitSystem = (edge.data?.unit as UnitSystem) || state.globalUnit;
+        if (oldUnit === newUnit) return edge;
+
+        const existingCache: UnitCache = (edge.data?._unitCache as UnitCache) || {};
+        const savedForOldUnit: Record<string, any> = {};
+        cacheableFields.forEach(key => {
+          const val = (edge.data as any)?.[key];
+          if (val !== undefined && val !== null && val !== '') savedForOldUnit[key] = val;
+        });
+        const newCache: UnitCache = {
+          ...existingCache,
+          [oldUnit]: { ...(existingCache[oldUnit] || {}), ...savedForOldUnit },
+        };
+
+        const dataUpdate: any = { unit: newUnit };
+        const cachedTarget: Record<string, any> = newCache[newUnit] || {};
+        Object.entries(edge.data || {}).forEach(([key, value]) => {
+          if (!fieldMapping[key]) return;
+          const cachedVal = cachedTarget[key];
+          if (cachedVal !== undefined) {
+            dataUpdate[key] = cachedVal;
+          } else if (typeof value === 'number' || (typeof value === 'string' && value.trim() !== '' && !isNaN(Number(value)))) {
+            dataUpdate[key] = convertValue(value as any, oldUnit, newUnit, fieldMapping[key]);
+          }
+        });
+
+        if (edge.data?.pipeE != null && edge.data.pipeE !== '') {
+          const val = typeof edge.data.pipeE === 'string' ? parseFloat(edge.data.pipeE) : edge.data.pipeE as number;
+          if (!isNaN(val)) dataUpdate.pipeE = convertValue(val, oldUnit, newUnit, 'pressure');
+        }
+        if (edge.data?.pipeWT != null && edge.data.pipeWT !== '') {
+          const val = typeof edge.data.pipeWT === 'string' ? parseFloat(edge.data.pipeWT) : edge.data.pipeWT as number;
+          if (!isNaN(val)) dataUpdate.pipeWT = convertValue(val, oldUnit, newUnit, 'diameter');
+        }
+
+        dataUpdate._unitCache = newCache;
+        return { ...edge, data: { ...edge.data, ...dataUpdate } };
+      });
+      set({ edges: newEdges as WhamoEdge[] });
+    }
   },
 
   onNodesChange: (changes: NodeChange[]) => {

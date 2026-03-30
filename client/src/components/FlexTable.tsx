@@ -81,18 +81,18 @@ function matchesFilter(row: UnifiedRow, filter: FilterKey): boolean {
 type ColKey = string;
 
 const COLS: Record<FilterKey, ColKey[]> = {
-  all:         ['rowNum','type','label','nodeNum','diameter','length','celerity','friction','elevation','comment'],
-  pipe:        ['rowNum','label','pipeType','diameter','length','celerity','friction','segments','comment'],
-  conduit:     ['rowNum','label','length','diameter','celerity','friction','manningsN','segments','inclSegments',
+  all:         ['rowNum','type','unitToggle','label','nodeNum','diameter','length','celerity','friction','elevation','comment'],
+  pipe:        ['rowNum','unitToggle','label','pipeType','diameter','length','celerity','friction','segments','comment'],
+  conduit:     ['rowNum','unitToggle','label','length','diameter','celerity','friction','manningsN','segments','inclSegments',
                  'hasAddedLoss','cplus','cminus','pipeE','pipeWT','variable','distance','area','comment'],
-  dummy:       ['rowNum','label','diameter','hasAddedLoss','cplus','cminus','comment'],
-  node:        ['rowNum','type','label','nodeNum','elevation','comment'],
-  reservoir:   ['rowNum','label','nodeNum','elevation','mode','resElev','hSchedNum','thPairs','comment'],
-  junction:    ['rowNum','label','nodeNum','elevation','comment'],
-  surgeTank:   ['rowNum','label','nodeNum','elevation','stType','tankTop','tankBot',
+  dummy:       ['rowNum','unitToggle','label','diameter','hasAddedLoss','cplus','cminus','comment'],
+  node:        ['rowNum','type','unitToggle','label','nodeNum','elevation','comment'],
+  reservoir:   ['rowNum','unitToggle','label','nodeNum','elevation','mode','resElev','hSchedNum','thPairs','comment'],
+  junction:    ['rowNum','unitToggle','label','nodeNum','elevation','comment'],
+  surgeTank:   ['rowNum','unitToggle','label','nodeNum','elevation','stType','tankTop','tankBot',
                  'initWaterLevel','riserDiam','riserTop','hasShape','diameter',
                  'celerity','friction','hasAddedLoss','cplus','cminus','shapePairs','comment'],
-  flowBoundary:['rowNum','label','nodeNum','schedNum','qSchedPairs','comment'],
+  flowBoundary:['rowNum','unitToggle','label','nodeNum','schedNum','qSchedPairs','comment'],
 };
 
 // ─── Pairs editor state ───────────────────────────────────────────────────────
@@ -243,6 +243,44 @@ function SummaryCell({ count, label }: { count: number; label: string }) {
         ? <span className="text-[10px] text-blue-600 font-medium">{count} {label}{count !== 1 ? 's' : ''}</span>
         : <span className="text-[10px] text-slate-300">—</span>
       }
+    </td>
+  );
+}
+
+// ─── Unit Toggle Cell ─────────────────────────────────────────────────────────
+interface UnitToggleCellProps {
+  rowId: string;
+  rowKind: 'node' | 'edge';
+  effectiveUnit: UnitSystem;
+  globalUnit: UnitSystem;
+  onSetUnit: (id: string, kind: 'node' | 'edge', unit: UnitSystem) => void;
+}
+
+function UnitToggleCell({ rowId, rowKind, effectiveUnit, globalUnit, onSetUnit }: UnitToggleCellProps) {
+  const isOverridden = (effectiveUnit !== globalUnit);
+  return (
+    <td className="border-r border-slate-200 px-1.5 py-[5px] min-w-[84px]">
+      <div className={cn(
+        'inline-flex items-center border rounded overflow-hidden text-[10px] h-[22px]',
+        isOverridden ? 'border-amber-400' : 'border-slate-200'
+      )}>
+        <button
+          data-testid={`cell-unit-si-${rowId}`}
+          className={cn(
+            'px-2 h-full font-semibold transition-colors',
+            effectiveUnit === 'SI' ? 'bg-[#1a73e8] text-white' : 'text-slate-500 hover:bg-slate-50'
+          )}
+          onClick={e => { e.stopPropagation(); onSetUnit(rowId, rowKind, 'SI'); }}
+        >SI</button>
+        <button
+          data-testid={`cell-unit-fps-${rowId}`}
+          className={cn(
+            'px-2 h-full font-semibold border-l border-slate-200 transition-colors',
+            effectiveUnit === 'FPS' ? 'bg-[#1a73e8] text-white' : 'text-slate-500 hover:bg-slate-50'
+          )}
+          onClick={e => { e.stopPropagation(); onSetUnit(rowId, rowKind, 'FPS'); }}
+        >FPS</button>
+      </div>
     </td>
   );
 }
@@ -416,7 +454,7 @@ function ColHeader({ col, unit }: { col: ColKey; unit: UnitSystem }) {
   const P = unit === 'FPS' ? 'psi' : 'Pa';
 
   const labels: Record<string, string> = {
-    rowNum: '#', type: 'Type', label: 'Label', pipeType: 'Pipe Type',
+    rowNum: '#', type: 'Type', unitToggle: 'Unit', label: 'Label', pipeType: 'Pipe Type',
     nodeNum: 'Node #', diameter: `Diameter (${L})`, length: `Length (${L})`,
     celerity: `Wave Speed (${V})`, friction: 'Friction', segments: 'Segments',
     inclSegments: 'Incl. in INP', hasAddedLoss: 'Added Loss',
@@ -441,16 +479,18 @@ function ColHeader({ col, unit }: { col: ColKey; unit: UnitSystem }) {
 
 // ─── Row cell renderer ────────────────────────────────────────────────────────
 function RowCells({
-  col, row, idx, unit, changeEdge, changeNode, hSchedules, onOpenPairsEditor,
+  col, row, idx, unit, globalUnit, changeEdge, changeNode, hSchedules, onOpenPairsEditor, onSetUnit,
 }: {
   col: ColKey;
   row: UnifiedRow;
   idx: number;
   unit: UnitSystem;
+  globalUnit: UnitSystem;
   changeEdge: (f: string, v: string) => void;
   changeNode: (f: string, v: string) => void;
   hSchedules: any[];
   onOpenPairsEditor: (rowId: string, rowKind: 'node' | 'edge', pairsType: 'qSchedule' | 'hSchedule' | 'shapePairs', scheduleNumber?: number) => void;
+  onSetUnit: (id: string, kind: 'node' | 'edge', unit: UnitSystem) => void;
 }) {
   const d = row.data;
   const isEdge = row.kind === 'edge';
@@ -459,6 +499,9 @@ function RowCells({
   const isRes = row.subType === 'reservoir';
   const isSurge = row.subType === 'surgeTank';
   const isFlow = row.subType === 'flowBoundary';
+
+  // Each row uses its own unit (per-element override) or falls back to global
+  const rowUnit: UnitSystem = (d.unit as UnitSystem) || unit;
 
   const change = isEdge ? changeEdge : changeNode;
   const fmt = (v: any) => (v === undefined || v === null || v === '') ? '' : String(parseFloat(Number(v).toFixed(8)));
@@ -472,6 +515,16 @@ function RowCells({
   switch (col) {
     case 'rowNum': return (
       <td key={col} className="border-r border-slate-200 px-2 py-[7px] text-slate-400 text-center text-xs w-9 select-none">{idx + 1}</td>
+    );
+    case 'unitToggle': return (
+      <UnitToggleCell
+        key={col}
+        rowId={row.id}
+        rowKind={row.kind}
+        effectiveUnit={rowUnit}
+        globalUnit={globalUnit}
+        onSetUnit={onSetUnit}
+      />
     );
     case 'type': return (
       <td key={col} className="border-r border-slate-200 px-2 py-1 min-w-[100px]">
@@ -520,7 +573,7 @@ function RowCells({
         if (d.manningsN != null && d.manningsN !== '') return String(d.manningsN);
         const f = parseFloat(d.friction) || 0;
         const diam = parseFloat(d.diameter) || 0;
-        const K = unit === 'FPS' ? 185 : 124.58;
+        const K = rowUnit === 'FPS' ? 185 : 124.58;
         if (f > 0 && diam > 0) return parseFloat(Math.sqrt((f * Math.pow(diam, 1 / 3)) / K).toFixed(6)).toString();
         return '';
       })();
@@ -674,7 +727,7 @@ function RowCells({
 // ─── Main table ───────────────────────────────────────────────────────────────
 function UnifiedTable({
   rows, filter, unit, hSchedules,
-  onChangeEdge, onChangeNode, onSelectEdge, onSelectNode, onOpenPairsEditor,
+  onChangeEdge, onChangeNode, onSelectEdge, onSelectNode, onOpenPairsEditor, onSetUnit,
 }: {
   rows: UnifiedRow[];
   filter: FilterKey;
@@ -685,6 +738,7 @@ function UnifiedTable({
   onSelectEdge: (id: string) => void;
   onSelectNode: (id: string) => void;
   onOpenPairsEditor: (rowId: string, rowKind: 'node' | 'edge', pairsType: 'qSchedule' | 'hSchedule' | 'shapePairs', scheduleNumber?: number) => void;
+  onSetUnit: (id: string, kind: 'node' | 'edge', unit: UnitSystem) => void;
 }) {
   const cols = COLS[filter] ?? COLS.all;
 
@@ -721,10 +775,11 @@ function UnifiedTable({
               >
                 {cols.map(col => (
                   <RowCells
-                    key={col} col={col} row={row} idx={idx} unit={unit}
+                    key={col} col={col} row={row} idx={idx} unit={unit} globalUnit={unit}
                     changeEdge={changeEdge} changeNode={changeNode}
                     hSchedules={hSchedules}
                     onOpenPairsEditor={onOpenPairsEditor}
+                    onSetUnit={onSetUnit}
                   />
                 ))}
               </tr>
@@ -739,7 +794,7 @@ function UnifiedTable({
 // ─── FlexTable (exported) ─────────────────────────────────────────────────────
 export function FlexTable({ open, onClose }: FlexTableProps) {
   const {
-    nodes, edges, globalUnit, setGlobalUnit,
+    nodes, edges, globalUnit, setGlobalUnit, setElementUnit,
     updateEdgeData, updateNodeData, selectElement,
     hSchedules, updateHSchedule, addHSchedule,
   } = useNetworkStore();
@@ -813,7 +868,8 @@ export function FlexTable({ open, onClose }: FlexTableProps) {
     if (field === 'manningsN') {
       const n = parseFloat(rawStr) || 0;
       const diam = parseFloat(currentData?.diameter) || 0;
-      const K = globalUnit === 'SI' ? 124.58 : 185;
+      const elemUnit: UnitSystem = (currentData?.unit as UnitSystem) || globalUnit;
+      const K = elemUnit === 'SI' ? 124.58 : 185;
       if (n > 0 && diam > 0) {
         update.friction = parseFloat(((K * n * n) / Math.pow(diam, 1 / 3)).toFixed(6));
       }
@@ -901,20 +957,22 @@ export function FlexTable({ open, onClose }: FlexTableProps) {
 
   const visibleChips = FILTER_CHIPS.filter(c => counts[c.key as keyof typeof counts] > 0 || c.key === 'all');
 
-  // Build editor title/labels
+  // Build editor title/labels — use element's own unit if set
+  const editorRow = pairsEditor ? allRows.find(r => r.id === pairsEditor.rowId) : null;
+  const editorUnit: UnitSystem = (editorRow?.data?.unit as UnitSystem) || globalUnit;
   const editorTitle = pairsEditor?.pairsType === 'qSchedule'
     ? 'Edit Q Schedule Points'
     : pairsEditor?.pairsType === 'shapePairs'
     ? 'Edit Shape (E, A) Pairs'
     : 'Edit T/H Pairs';
   const editorTimeLabel = pairsEditor?.pairsType === 'shapePairs'
-    ? `E (${globalUnit === 'FPS' ? 'ft' : 'm'})`
+    ? `E (${editorUnit === 'FPS' ? 'ft' : 'm'})`
     : 'Time (T)';
   const editorValueLabel = pairsEditor?.pairsType === 'qSchedule'
-    ? `Flow (Q) (${globalUnit === 'FPS' ? 'ft³/s' : 'm³/s'})`
+    ? `Flow (Q) (${editorUnit === 'FPS' ? 'ft³/s' : 'm³/s'})`
     : pairsEditor?.pairsType === 'shapePairs'
-    ? `A (${globalUnit === 'FPS' ? 'ft²' : 'm²'})`
-    : `Head (H) (${globalUnit === 'FPS' ? 'ft' : 'm'})`;
+    ? `A (${editorUnit === 'FPS' ? 'ft²' : 'm²'})`
+    : `Head (H) (${editorUnit === 'FPS' ? 'ft' : 'm'})`;
 
   return (
     <>
@@ -992,12 +1050,13 @@ export function FlexTable({ open, onClose }: FlexTableProps) {
               onChangeEdge={handleChangeEdge} onChangeNode={handleChangeNode}
               onSelectEdge={handleSelectEdge} onSelectNode={handleSelectNode}
               onOpenPairsEditor={handleOpenPairsEditor}
+              onSetUnit={setElementUnit}
             />
             <p className="text-[10px] text-slate-400 flex-none">
               Showing {filteredRows.length} of {allRows.length} elements ·
               Click any white cell to edit · Dimmed cells are read-only for that element type ·
               Array fields (T/H pairs, shape, Q-schedule) — edit via the Properties Panel ·
-              SI/FPS toggle applies globally
+              SI/FPS toggle applies globally · Per-row Unit column overrides individual elements · Amber border indicates per-element override
             </p>
           </div>
         </DialogContent>
