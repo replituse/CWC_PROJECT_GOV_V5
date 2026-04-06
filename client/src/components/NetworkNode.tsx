@@ -3,8 +3,6 @@ import { clsx } from 'clsx';
 import { memo } from 'react';
 import reservoirImg from '@/assets/reservoir.png';
 import tankImg from '@/assets/tank.png';
-import pumpImg from '@/assets/pump.png';
-import valveImg from '@/assets/valve.png';
 import { TooltipWrapper, DataList } from './TooltipWrapper';
 import { useNetworkStore } from '@/lib/store';
 
@@ -147,7 +145,7 @@ export const PumpNode = memo(({ id, data, selected }: NodeProps) => {
   return (
     <TooltipWrapper content={<DataList data={displayData} title="Pump Properties" />}>
       <div className={clsx(
-        "w-[60px] h-[60px] transition-all group relative flex items-center justify-center",
+        "w-[72px] h-[56px] transition-all group relative flex items-center justify-center",
       )}>
         <Handle type="target" id="t-top" position={Position.Top} className={clsx(HandleStyle, "!bg-orange-500")} />
         <Handle type="source" id="s-top" position={Position.Top} className={clsx(HandleStyle, "!bg-orange-500")} />
@@ -158,20 +156,35 @@ export const PumpNode = memo(({ id, data, selected }: NodeProps) => {
         <Handle type="target" id="t-right" position={Position.Right} className={clsx(HandleStyle, "!bg-orange-500")} />
         <Handle type="source" id="s-right" position={Position.Right} className={clsx(HandleStyle, "!bg-orange-500")} />
 
-        <div
-          className={clsx(
-            "w-full h-full rounded-full flex items-center justify-center transition-all overflow-hidden",
-            selected ? "drop-shadow-[0_0_8px_rgba(249,115,22,0.8)]" : ""
-          )}
-          style={{ backgroundColor: '#fff7ed', border: `2px solid ${selected ? '#ea580c' : '#f97316'}` }}
+        {/* 2D Centrifugal Pump Engineering Icon — no background */}
+        <svg
+          width="72" height="56" viewBox="0 0 72 56" fill="none"
+          className={clsx("transition-all", selected ? "drop-shadow-[0_0_10px_rgba(249,115,22,0.9)]" : "")}
         >
-          <img
-            src={pumpImg}
-            alt="Pump"
-            className="w-[90%] h-[90%] object-contain"
-            style={{ mixBlendMode: 'multiply' }}
-          />
-        </div>
+          {/* Motor housing */}
+          <rect x="1" y="12" width="22" height="32" rx="4" fill="#fb923c"/>
+          {/* Cooling fins on motor */}
+          <rect x="6"  y="12" width="2" height="32" rx="1" fill="#ea580c" opacity="0.8"/>
+          <rect x="11" y="12" width="2" height="32" rx="1" fill="#ea580c" opacity="0.8"/>
+          <rect x="16" y="12" width="2" height="32" rx="1" fill="#ea580c" opacity="0.8"/>
+          {/* Motor end cap (face) */}
+          <ellipse cx="23" cy="28" rx="5" ry="14" fill="#ea580c"/>
+          {/* Shaft coupling */}
+          <rect x="28" y="25" width="6" height="6" rx="2" fill="#c2410c"/>
+          {/* Pump volute casing */}
+          <circle cx="50" cy="28" r="20" fill="#fb923c"/>
+          {/* Volute scroll detail */}
+          <circle cx="50" cy="28" r="12" fill="none" stroke="#ea580c" strokeWidth="2"/>
+          {/* Impeller hub */}
+          <circle cx="50" cy="28" r="6" fill="#ea580c"/>
+          <circle cx="50" cy="28" r="3" fill="#c2410c"/>
+          {/* Discharge nozzle — top */}
+          <rect x="45" y="2" width="10" height="10" fill="#ea580c"/>
+          <rect x="42" y="9" width="16" height="3" rx="1" fill="#c2410c"/>
+          {/* Suction nozzle — bottom */}
+          <rect x="45" y="44" width="10" height="10" fill="#ea580c"/>
+          <rect x="42" y="44" width="16" height="3" rx="1" fill="#c2410c"/>
+        </svg>
 
         <div className="absolute -top-6 text-[10px] font-bold text-orange-900 bg-white/80 px-1 rounded border border-orange-200 shadow-sm whitespace-nowrap">
           {data.label as React.ReactNode}
@@ -189,7 +202,7 @@ export const CheckValveNode = memo(({ id, data, selected }: NodeProps) => {
   return (
     <TooltipWrapper content={<DataList data={displayData} title="Check Valve Properties" />}>
       <div className={clsx(
-        "w-[60px] h-[60px] transition-all group relative flex items-center justify-center",
+        "w-[72px] h-[60px] transition-all group relative flex items-center justify-center",
       )}>
         <Handle type="target" id="t-top" position={Position.Top} className={clsx(HandleStyle, "!bg-violet-500")} />
         <Handle type="source" id="s-top" position={Position.Top} className={clsx(HandleStyle, "!bg-violet-500")} />
@@ -200,20 +213,46 @@ export const CheckValveNode = memo(({ id, data, selected }: NodeProps) => {
         <Handle type="target" id="t-right" position={Position.Right} className={clsx(HandleStyle, "!bg-violet-500")} />
         <Handle type="source" id="s-right" position={Position.Right} className={clsx(HandleStyle, "!bg-violet-500")} />
 
-        <div
-          className={clsx(
-            "w-full h-full rounded-full flex items-center justify-center transition-all overflow-hidden",
-            selected ? "drop-shadow-[0_0_8px_rgba(139,92,246,0.8)]" : ""
-          )}
-          style={{ backgroundColor: '#f5f3ff', border: `2px solid ${selected ? '#7c3aed' : '#8b5cf6'}` }}
+        {/* 2D Gate Valve Engineering Icon — no background */}
+        <svg
+          width="72" height="60" viewBox="0 0 72 60" fill="none"
+          className={clsx("transition-all", selected ? "drop-shadow-[0_0_10px_rgba(139,92,246,0.9)]" : "")}
         >
-          <img
-            src={valveImg}
-            alt="Check Valve"
-            className="w-[90%] h-[90%] object-contain"
-            style={{ mixBlendMode: 'multiply' }}
-          />
-        </div>
+          {/* Left pipe */}
+          <rect x="0" y="26" width="14" height="8" fill="#a78bfa"/>
+          {/* Left flange */}
+          <rect x="12" y="22" width="5" height="16" rx="1" fill="#7c3aed"/>
+          {/* Right pipe */}
+          <rect x="58" y="26" width="14" height="8" fill="#a78bfa"/>
+          {/* Right flange */}
+          <rect x="55" y="22" width="5" height="16" rx="1" fill="#7c3aed"/>
+          {/* Valve body */}
+          <rect x="17" y="19" width="38" height="22" rx="3" fill="#8b5cf6"/>
+          {/* Body top highlight */}
+          <rect x="17" y="19" width="38" height="8" rx="3" fill="#a78bfa"/>
+          {/* Body centre panel / gate slot */}
+          <rect x="31" y="19" width="10" height="22" rx="1" fill="#7c3aed" opacity="0.5"/>
+          {/* Body bolts — left */}
+          <circle cx="21" cy="23" r="2" fill="#6d28d9"/>
+          <circle cx="21" cy="37" r="2" fill="#6d28d9"/>
+          {/* Body bolts — right */}
+          <circle cx="51" cy="23" r="2" fill="#6d28d9"/>
+          <circle cx="51" cy="37" r="2" fill="#6d28d9"/>
+          {/* Stem */}
+          <rect x="33" y="5" width="6" height="14" rx="1" fill="#7c3aed"/>
+          {/* Handwheel outer ring */}
+          <ellipse cx="36" cy="7" rx="13" ry="5" fill="none" stroke="#7c3aed" strokeWidth="3"/>
+          {/* Handwheel spokes */}
+          <line x1="23" y1="7" x2="36" y2="7" stroke="#7c3aed" strokeWidth="2"/>
+          <line x1="49" y1="7" x2="36" y2="7" stroke="#7c3aed" strokeWidth="2"/>
+          <line x1="36" y1="2"  x2="36" y2="12" stroke="#7c3aed" strokeWidth="2"/>
+          {/* Handwheel hub */}
+          <circle cx="36" cy="7" r="3" fill="#7c3aed"/>
+          {/* Pressure gauge */}
+          <circle cx="56" cy="46" r="6" fill="#c4b5fd" stroke="#7c3aed" strokeWidth="1.5"/>
+          <line x1="56" y1="41" x2="56" y2="40" stroke="#7c3aed" strokeWidth="1.5"/>
+          <line x1="53" y1="46" x2="56" y2="44" stroke="#7c3aed" strokeWidth="1.5"/>
+        </svg>
 
         <div className="absolute -top-6 text-[10px] font-bold text-violet-900 bg-white/80 px-1 rounded border border-violet-200 shadow-sm whitespace-nowrap">
           {data.label as React.ReactNode}
