@@ -570,8 +570,9 @@ export function PropertiesPanel() {
                       <SelectValue placeholder="Type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">TYPE 1</SelectItem>
-                      <SelectItem value="2">TYPE 2</SelectItem>
+                      {Object.keys(pcharData).map(Number).sort((a, b) => a - b).map(t => (
+                        <SelectItem key={t} value={String(t)}>TYPE {t}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -624,7 +625,7 @@ export function PropertiesPanel() {
                         PCHAR TYPE {pType} data is global — shared across all pumps of this type.
                       </p>
                       <div className="grid gap-1">
-                        <Label className="text-[10px] font-medium">SRATIO (11 values, space-separated)</Label>
+                        <Label className="text-[10px] font-medium">SRATIO ({activePc.sratio.length} values, space-separated)</Label>
                         <textarea
                           data-testid="textarea-sratio"
                           className="w-full border rounded text-[10px] font-mono p-1.5 resize-none h-10 focus:outline-none focus:ring-1 focus:ring-orange-400"
@@ -633,7 +634,7 @@ export function PropertiesPanel() {
                         />
                       </div>
                       <div className="grid gap-1">
-                        <Label className="text-[10px] font-medium">QRATIO (12 values, space-separated)</Label>
+                        <Label className="text-[10px] font-medium">QRATIO ({activePc.qratio.length} values, space-separated)</Label>
                         <textarea
                           data-testid="textarea-qratio"
                           className="w-full border rounded text-[10px] font-mono p-1.5 resize-none h-10 focus:outline-none focus:ring-1 focus:ring-orange-400"
@@ -642,7 +643,9 @@ export function PropertiesPanel() {
                         />
                       </div>
                       <div className="grid gap-1">
-                        <Label className="text-[10px] font-medium">HRATIO (12 rows × 11 cols — one row per line)</Label>
+                        <Label className="text-[10px] font-medium">
+                          HRATIO ({activePc.qratio.length} rows × {activePc.sratio.length} cols = {activePc.qratio.length * activePc.sratio.length} values — one row per line)
+                        </Label>
                         <textarea
                           data-testid="textarea-hratio"
                           className="w-full border rounded text-[10px] font-mono p-1.5 resize-none h-28 focus:outline-none focus:ring-1 focus:ring-orange-400"
@@ -656,7 +659,9 @@ export function PropertiesPanel() {
                         />
                       </div>
                       <div className="grid gap-1">
-                        <Label className="text-[10px] font-medium">TRATIO (132 flat values, space-separated, 8 per line)</Label>
+                        <Label className="text-[10px] font-medium">
+                          TRATIO ({activePc.qratio.length * activePc.sratio.length} flat values, space-separated, 8 per line)
+                        </Label>
                         <textarea
                           data-testid="textarea-tratio"
                           className="w-full border rounded text-[10px] font-mono p-1.5 resize-none h-28 focus:outline-none focus:ring-1 focus:ring-orange-400"

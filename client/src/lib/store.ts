@@ -18,10 +18,10 @@ import { NodeType, LinkType } from '@shared/schema';
 export type UnitSystem = 'SI' | 'FPS';
 
 export interface PcharType {
-  sratio: number[];   // 11 values
-  qratio: number[];   // 12 values
-  hratio: number[][];  // [12 rows][11 cols]
-  tratio: number[];    // flat 132 values (12×11)
+  sratio: number[];   // any length (user-defined)
+  qratio: number[];   // any length (user-defined)
+  hratio: number[][];  // [qratio.length rows][sratio.length cols]
+  tratio: number[];    // flat qratio.length × sratio.length values
 }
 
 // Define base data structures for our specific engineering domain
@@ -610,6 +610,8 @@ export const useNetworkStore = create<NetworkState>((set, get) => ({
     // regardless of how many edges or other elements have been created.
     const nodeNumber = get().nodes.filter(n => n.data?.nodeNumber !== undefined).length + 1;
 
+    let newPumpTypeToInit: number | null = null;
+
     switch (type) {
       case 'reservoir':
         initialData = { ...initialData, label: 'HW', nodeNumber, elevation: 100, reservoirElevation: 100 };
@@ -628,7 +630,9 @@ export const useNetworkStore = create<NetworkState>((set, get) => ({
         break;
       case 'pump': {
         const pumpCount = get().nodes.filter(n => n.type === 'pump').length + 1;
-        initialData = { ...initialData, label: `P${pumpCount}`, nodeNumber, elevation: 0, pumpStatus: 'ACTIVE', pumpType: 1, rq: 0, rhead: 0, rspeed: 0, rtorque: 0, wr2: 0 };
+        const existingTypes = Object.keys(get().pcharData).map(Number);
+        newPumpTypeToInit = existingTypes.length > 0 ? Math.max(...existingTypes) + 1 : 1;
+        initialData = { ...initialData, label: `P${pumpCount}`, nodeNumber, elevation: 0, pumpStatus: 'ACTIVE', pumpType: newPumpTypeToInit, rq: 0, rhead: 0, rspeed: 0, rtorque: 0, wr2: 0 };
         break;
       }
       case 'checkValve': {
@@ -646,6 +650,16 @@ export const useNetworkStore = create<NetworkState>((set, get) => ({
     };
 
     set({ nodes: [...get().nodes, newNode] });
+
+    if (newPumpTypeToInit !== null) {
+      const defaultPchar: PcharType = {
+        sratio: Array(11).fill(0),
+        qratio: Array(12).fill(0),
+        hratio: Array.from({ length: 12 }, () => Array(11).fill(0)),
+        tratio: Array(132).fill(0),
+      };
+      set({ pcharData: { ...get().pcharData, [newPumpTypeToInit]: defaultPchar } });
+    }
     
     // Auto-select output requests for the new node
     const availableVars = ["Q", "HEAD", "ELEV", "VEL", "PRESS", "PIEZHEAD"];

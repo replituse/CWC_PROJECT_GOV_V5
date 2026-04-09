@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
-import { useNetworkStore, type UnitSystem } from '@/lib/store';
+import { useNetworkStore, type UnitSystem, type PcharType } from '@/lib/store';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -490,7 +490,7 @@ function ColHeader({ col, unit }: { col: ColKey; unit: UnitSystem }) {
 // ─── Row cell renderer ────────────────────────────────────────────────────────
 function RowCells({
   col, row, idx, unit, globalUnit, changeEdge, changeNode, hSchedules, onOpenPairsEditor, onSetUnit,
-  isHighlighted, onHighlightRow,
+  isHighlighted, onHighlightRow, pcharData,
 }: {
   col: ColKey;
   row: UnifiedRow;
@@ -504,6 +504,7 @@ function RowCells({
   onSetUnit: (id: string, kind: 'node' | 'edge', unit: UnitSystem) => void;
   isHighlighted: boolean;
   onHighlightRow: () => void;
+  pcharData: Record<number, PcharType>;
 }) {
   const d = row.data;
   const isEdge = row.kind === 'edge';
@@ -748,11 +749,15 @@ function RowCells({
         options={[{label:'ACTIVE',value:'ACTIVE'},{label:'INACTIVE',value:'INACTIVE'}]}
         dimmed={!isPump} onChange={isPump ? v => changeNode('pumpStatus', v) : undefined} testId={`cell-pumpstatus-${row.id}`} />
     );
-    case 'pumpType': return (
-      <SelectCell key={col} value={String(d.pumpType ?? 1)}
-        options={[{label:'TYPE 1',value:'1'},{label:'TYPE 2',value:'2'}]}
-        dimmed={!isPump} onChange={isPump ? v => changeNode('pumpType', v) : undefined} testId={`cell-pumptype-${row.id}`} />
-    );
+    case 'pumpType': {
+      const pcharTypeOptions = Object.keys(pcharData).map(Number).sort((a, b) => a - b)
+        .map(t => ({ label: `TYPE ${t}`, value: String(t) }));
+      return (
+        <SelectCell key={col} value={String(d.pumpType ?? 1)}
+          options={pcharTypeOptions.length > 0 ? pcharTypeOptions : [{label:'TYPE 1',value:'1'}]}
+          dimmed={!isPump} onChange={isPump ? v => changeNode('pumpType', v) : undefined} testId={`cell-pumptype-${row.id}`} />
+      );
+    }
     case 'rq': return (
       <EditableCell key={col} value={isPump ? fmt(d.rq ?? 0) : ''} type="number"
         readOnly={!isPump} dimmed={!isPump}
@@ -798,13 +803,14 @@ function RowCells({
 
 // ─── Main table ───────────────────────────────────────────────────────────────
 function UnifiedTable({
-  rows, filter, unit, hSchedules,
+  rows, filter, unit, hSchedules, pcharData,
   onChangeEdge, onChangeNode, onSelectEdge, onSelectNode, onOpenPairsEditor, onSetUnit,
 }: {
   rows: UnifiedRow[];
   filter: FilterKey;
   unit: UnitSystem;
   hSchedules: any[];
+  pcharData: Record<number, PcharType>;
   onChangeEdge: (id: string, field: string, val: string, data: any) => void;
   onChangeNode: (id: string, field: string, val: string, data: any) => void;
   onSelectEdge: (id: string) => void;
@@ -864,6 +870,7 @@ function UnifiedTable({
                     onSetUnit={onSetUnit}
                     isHighlighted={isHighlighted}
                     onHighlightRow={() => setHighlightedRowId(isHighlighted ? null : row.id)}
+                    pcharData={pcharData}
                   />
                 ))}
               </tr>
@@ -881,6 +888,7 @@ export function FlexTable({ open, onClose }: FlexTableProps) {
     nodes, edges, globalUnit, setGlobalUnit, setElementUnit,
     updateEdgeData, updateNodeData, selectElement,
     hSchedules, updateHSchedule, addHSchedule,
+    pcharData,
   } = useNetworkStore();
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
   const [pairsEditor, setPairsEditor] = useState<PairsEditorState | null>(null);
@@ -1133,6 +1141,7 @@ export function FlexTable({ open, onClose }: FlexTableProps) {
           <div className="flex-1 overflow-hidden flex flex-col px-4 py-3 gap-2 bg-slate-50/70">
             <UnifiedTable
               rows={filteredRows} filter={activeFilter} unit={globalUnit} hSchedules={hSchedules ?? []}
+              pcharData={pcharData ?? {}}
               onChangeEdge={handleChangeEdge} onChangeNode={handleChangeNode}
               onSelectEdge={handleSelectEdge} onSelectNode={handleSelectNode}
               onOpenPairsEditor={handleOpenPairsEditor}
