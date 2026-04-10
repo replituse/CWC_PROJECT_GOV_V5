@@ -8,6 +8,48 @@ export interface ValidationError {
   elementType?: string;
 }
 
+/**
+ * Detect all cycles in an undirected graph using DFS.
+ * Returns each cycle as an ordered list of node IDs.
+ */
+function findUndirectedCycles(
+  nodeIds: string[],
+  adjacency: Map<string, string[]>
+): string[][] {
+  const color = new Map<string, 'unvisited' | 'inStack' | 'done'>();
+  nodeIds.forEach(id => color.set(id, 'unvisited'));
+
+  const cycles: string[][] = [];
+  const stack: string[] = [];
+
+  const dfs = (nodeId: string, parentId: string | null) => {
+    color.set(nodeId, 'inStack');
+    stack.push(nodeId);
+
+    for (const neighbor of (adjacency.get(nodeId) || [])) {
+      if (neighbor === parentId) continue;
+
+      if (color.get(neighbor) === 'inStack') {
+        const idx = stack.indexOf(neighbor);
+        if (idx !== -1) {
+          cycles.push([...stack.slice(idx)]);
+        }
+      } else if (color.get(neighbor) === 'unvisited') {
+        dfs(neighbor, nodeId);
+      }
+    }
+
+    stack.pop();
+    color.set(nodeId, 'done');
+  };
+
+  nodeIds.forEach(id => {
+    if (color.get(id) === 'unvisited') dfs(id, null);
+  });
+
+  return cycles;
+}
+
 export function validateNetwork(nodes: WhamoNode[], edges: WhamoEdge[]): { errors: ValidationError[], warnings: ValidationError[] } {
   const errors: ValidationError[] = [];
   const warnings: ValidationError[] = [];
@@ -210,6 +252,48 @@ export function validateNetwork(nodes: WhamoNode[], edges: WhamoEdge[]): { error
       if (Number(d.friction) > 0.1) addWarning(e.id, `Pipe ${d.label} friction value unusually high.`, d.label, d.type);
     }
   });
+
+  // 4. Closed-loop detection between Reservoir and Surge Tank
+  // Neither reservoirs nor surge tanks can be inside a cycle (both have exactly 1 connection),
+  // but they may connect to nodes that form a loop. We detect every cycle in the undirected
+  // graph and flag any cycle where both a reservoir AND a surge tank are adjacent to that cycle.
+  const nodeById = new Map(nodes.map(n => [n.id, n]));
+  const reservoirIdSet = new Set(reservoirs.map(n => n.id));
+  const surgeTankIdSet = new Set(nodes.filter(n => n.type === 'surgeTank').map(n => n.id));
+
+  if (surgeTankIdSet.size > 0 && reservoirIdSet.size > 0) {
+    const cycles = findUndirectedCycles(nodes.map(n => n.id), adjacency);
+
+    cycles.forEach((cycle, idx) => {
+      // Collect all nodes that are either in the cycle OR directly adjacent to it
+      const reachableFromCycle = new Set<string>(cycle);
+      cycle.forEach(nid => {
+        (adjacency.get(nid) || []).forEach(neighbor => reachableFromCycle.add(neighbor));
+      });
+
+      const reservoirsNearCycle = [...reachableFromCycle].filter(id => reservoirIdSet.has(id));
+      const surgeTanksNearCycle = [...reachableFromCycle].filter(id => surgeTankIdSet.has(id));
+
+      if (reservoirsNearCycle.length > 0 && surgeTanksNearCycle.length > 0) {
+        const rLabels = reservoirsNearCycle
+          .map(id => nodeById.get(id)?.data.label || id)
+          .join(', ');
+        const stLabels = surgeTanksNearCycle
+          .map(id => nodeById.get(id)?.data.label || id)
+          .join(', ');
+        const pathLabels = cycle
+          .map(id => nodeById.get(id)?.data.label || id)
+          .join(' → ');
+
+        addError(
+          `loop-${cycle[0]}-${idx}`,
+          `Closed loop detected involving Reservoir [${rLabels}] and Surge Tank [${stLabels}]. ` +
+          `Loop path: ${pathLabels}. WHAMO does not support closed network loops — ` +
+          `the network must be a branching (tree) topology.`
+        );
+      }
+    });
+  }
 
   return { errors, warnings };
 }
