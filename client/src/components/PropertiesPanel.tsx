@@ -475,16 +475,35 @@ export function PropertiesPanel() {
 
           {isNode && (element.data?.type === 'node' || element.data?.type === 'junction' || element.data?.type === 'reservoir' || element.data?.type === 'surgeTank' || element.data?.type === 'flowBoundary' || element.data?.type_st) && (
             <>
-              <div className="grid gap-2">
+              <div className="grid gap-1">
                 <Label htmlFor="nodeNum">Node Number</Label>
-                <Input
-                  id="nodeNum"
-                  data-testid="input-node-number"
-                  type="number"
-                  value={nodeNumInput}
-                  onChange={(e) => setNodeNumInput(e.target.value)}
-                  onBlur={handleNodeNumberBlur}
-                />
+                {(() => {
+                  const parsedNum = parseInt(nodeNumInput, 10);
+                  const isDuplicate = !isNaN(parsedNum) && nodes.some(
+                    n => n.id !== selectedElementId && n.data?.nodeNumber === parsedNum
+                  );
+                  return (
+                    <>
+                      <Input
+                        id="nodeNum"
+                        data-testid="input-node-number"
+                        type="number"
+                        value={nodeNumInput}
+                        onChange={(e) => setNodeNumInput(e.target.value)}
+                        onBlur={handleNodeNumberBlur}
+                        className={isDuplicate ? "border-destructive ring-1 ring-destructive focus-visible:ring-destructive" : ""}
+                      />
+                      {isDuplicate && (
+                        <p className="text-xs text-destructive flex items-center gap-1 mt-0.5" data-testid="error-node-number-duplicate">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M18 10A8 8 0 11 2 10a8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                          </svg>
+                          Node {parsedNum} already exists
+                        </p>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="elev">Elevation ({currentUnit === 'SI' ? 'm' : 'ft'})</Label>
