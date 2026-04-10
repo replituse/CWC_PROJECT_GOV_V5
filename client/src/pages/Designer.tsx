@@ -272,11 +272,44 @@ function DesignerInner() {
     [storeOnConnect, toast, isLocked, edges, nodes]
   );
 
+  const MAX_CONNECTIONS = 6;
+
+  const isValidConnection = useCallback(
+    (connection: Connection) => {
+      const currentEdges = useNetworkStore.getState().edges as WhamoEdge[];
+      const sourceDegree = currentEdges.filter(
+        e => e.source === connection.source || e.target === connection.source
+      ).length;
+      const targetDegree = currentEdges.filter(
+        e => e.source === connection.target || e.target === connection.target
+      ).length;
+      return sourceDegree < MAX_CONNECTIONS && targetDegree < MAX_CONNECTIONS;
+    },
+    []
+  );
+
   const onConnectEnd = useCallback(
     (event: MouseEvent | TouchEvent, connectionState: any) => {
       if (isLocked) return;
       // Only fire when dropped on empty canvas (no target node)
       if (connectionState?.fromNode && !connectionState?.toNode) {
+        // Check if source already has max connections before creating new node
+        const currentEdges = useNetworkStore.getState().edges as WhamoEdge[];
+        const sourceId = connectionState.fromNode.id;
+        const sourceDegree = currentEdges.filter(
+          e => e.source === sourceId || e.target === sourceId
+        ).length;
+        if (sourceDegree >= MAX_CONNECTIONS) {
+          const sourceNode = useNetworkStore.getState().nodes.find(n => n.id === sourceId);
+          const label = (sourceNode?.data?.label as string) || `Node ${sourceNode?.data?.nodeNumber ?? sourceId}`;
+          toast({
+            variant: "destructive",
+            title: "Connection Limit Reached",
+            description: `"${label}" already has ${MAX_CONNECTIONS} connections. WHAMO allows a maximum of ${MAX_CONNECTIONS} pipes at a junction.`,
+          });
+          return;
+        }
+
         const { clientX, clientY } =
           'changedTouches' in event ? event.changedTouches[0] : (event as MouseEvent);
         const dropPos = screenToFlowPosition({ x: clientX, y: clientY });
@@ -321,7 +354,7 @@ function DesignerInner() {
         });
       }
     },
-    [isLocked, screenToFlowPosition, addNode, storeOnConnect]
+    [isLocked, screenToFlowPosition, addNode, storeOnConnect, toast]
   );
 
   const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
@@ -735,6 +768,7 @@ function DesignerInner() {
                   onEdgesChange={onEdgesChange}
                   onConnect={onConnect}
                   onConnectEnd={onConnectEnd}
+                  isValidConnection={isValidConnection}
                   nodeTypes={nodeTypes}
                   edgeTypes={edgeTypes}
                   onNodeClick={onNodeClick}
