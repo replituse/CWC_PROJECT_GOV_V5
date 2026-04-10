@@ -9,6 +9,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Trash2, ChevronDown, ChevronRight, Plus, CheckCircle2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 function PcharEditor({ pType, activePc, updatePcharData }: {
   pType: number;
@@ -129,8 +130,40 @@ export function PropertiesPanel() {
     deletePcharType,
   } = useNetworkStore();
 
+  const { toast } = useToast();
   const [newTypeNum, setNewTypeNum] = useState<string>("");
   const [profileApplied, setProfileApplied] = useState<string | null>(null);
+  const [nodeNumInput, setNodeNumInput] = useState<string>("");
+
+  useEffect(() => {
+    const el = selectedElementId
+      ? nodes.find(n => n.id === selectedElementId)
+      : null;
+    setNodeNumInput(el?.data?.nodeNumber !== undefined ? String(el.data.nodeNumber) : "");
+  }, [selectedElementId, nodes]);
+
+  const handleNodeNumberBlur = () => {
+    const newNum = parseInt(nodeNumInput, 10);
+    if (isNaN(newNum)) {
+      const original = nodes.find(n => n.id === selectedElementId)?.data?.nodeNumber;
+      setNodeNumInput(original !== undefined ? String(original) : "");
+      return;
+    }
+    const duplicate = nodes.find(
+      n => n.id !== selectedElementId && n.data?.nodeNumber === newNum
+    );
+    if (duplicate) {
+      toast({
+        variant: "destructive",
+        title: "Duplicate Node Number",
+        description: `Node number ${newNum} is already used by another node. Please choose a unique number.`,
+      });
+      const original = nodes.find(n => n.id === selectedElementId)?.data?.nodeNumber;
+      setNodeNumInput(original !== undefined ? String(original) : "");
+      return;
+    }
+    handleChange('nodeNumber', nodeNumInput);
+  };
 
   if (!selectedElementId) return null;
 
@@ -444,11 +477,13 @@ export function PropertiesPanel() {
             <>
               <div className="grid gap-2">
                 <Label htmlFor="nodeNum">Node Number</Label>
-                <Input 
-                  id="nodeNum" 
-                  type="number" 
-                  value={element.data?.nodeNumber || 0} 
-                  onChange={(e) => handleChange('nodeNumber', e.target.value)} 
+                <Input
+                  id="nodeNum"
+                  data-testid="input-node-number"
+                  type="number"
+                  value={nodeNumInput}
+                  onChange={(e) => setNodeNumInput(e.target.value)}
+                  onBlur={handleNodeNumberBlur}
                 />
               </div>
               <div className="grid gap-2">

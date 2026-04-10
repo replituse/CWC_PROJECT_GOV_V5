@@ -612,9 +612,12 @@ export const useNetworkStore = create<NetworkState>((set, get) => ({
     const id = getId();
     let initialData: NodeData = { label: '', type };
 
-    // Compute nodeNumber independently from the internal id so it stays sequential
-    // regardless of how many edges or other elements have been created.
-    const nodeNumber = get().nodes.filter(n => n.data?.nodeNumber !== undefined).length + 1;
+    // Compute nodeNumber as max existing nodeNumber + 1 so that manually
+    // reassigned numbers never collide with the auto-assigned ones.
+    const existingNumbers = get().nodes
+      .filter(n => n.data?.nodeNumber !== undefined)
+      .map(n => n.data.nodeNumber as number);
+    const nodeNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
 
     let newPumpTypeToInit: number | null = null;
 
