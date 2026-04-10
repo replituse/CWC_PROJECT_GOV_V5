@@ -578,7 +578,34 @@ function RowCells({
         <EditableCell key={col} value={fmt(d.diameter)} type="text" inputMode="decimal"
           readOnly={(!isEdge && !isSurge) || surgeShapeActive}
           dimmed={(!isEdge && !isSurge && !isConduit && !isDummy) || surgeShapeActive}
-          onChange={v => change('diameter', v)} testId={`cell-diameter-${row.id}`} />
+          onChange={v => {
+            change('diameter', v);
+            if (isEdge) {
+              const newDiam = parseFloat(v);
+              if (!isNaN(newDiam) && newDiam > 0) {
+                const C0 = rowUnit === 'SI' ? 1440 : 4720;
+                const Kw = rowUnit === 'SI' ? 2.07e9 : 3e5;
+                const K  = rowUnit === 'SI' ? 124.58 : 185;
+                const E  = parseFloat(d.pipeE) || 0;
+                const WT = parseFloat(d.pipeWT) || 0;
+                if (E > 0 && WT > 0) {
+                  const c = C0 / Math.sqrt(1 + (Kw / E) * (newDiam / WT));
+                  changeEdge('celerity', parseFloat(c.toFixed(4)).toString());
+                }
+                const n = parseFloat(d.manningsN);
+                if (!isNaN(n) && n > 0) {
+                  const f = (K * n * n) / Math.pow(newDiam, 1 / 3);
+                  changeEdge('friction', parseFloat(f.toFixed(6)).toString());
+                } else {
+                  const f = parseFloat(d.friction);
+                  if (!isNaN(f) && f > 0) {
+                    const nNew = Math.sqrt((f * Math.pow(newDiam, 1 / 3)) / K);
+                    changeEdge('manningsN', parseFloat(nNew.toFixed(6)).toString());
+                  }
+                }
+              }
+            }
+          }} testId={`cell-diameter-${row.id}`} />
       );
     }
     case 'length': return (

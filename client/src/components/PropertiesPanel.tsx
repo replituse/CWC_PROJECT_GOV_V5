@@ -1210,7 +1210,36 @@ export function PropertiesPanel() {
                       id="diam" 
                       type="text" inputMode="decimal" 
                       value={element.data?.diameter ?? ''} 
-                      onChange={(e) => handleChange('diameter', e.target.value)} 
+                      onChange={(e) => {
+                        const newDiam = parseFloat(e.target.value);
+                        handleChange('diameter', e.target.value);
+
+                        if (!isNaN(newDiam) && newDiam > 0) {
+                          // Recalculate wave speed (celerity) if E and WT are set
+                          const C0 = currentUnit === 'SI' ? 1440 : 4720;
+                          const Kw = currentUnit === 'SI' ? 2.07e9 : 3e5;
+                          const E  = parseFloat(element.data?.pipeE) || 0;
+                          const WT = parseFloat(element.data?.pipeWT) || 0;
+                          if (E > 0 && WT > 0) {
+                            const c = C0 / Math.sqrt(1 + (Kw / E) * (newDiam / WT));
+                            handleChange('celerity', parseFloat(c.toFixed(4)).toString());
+                          }
+
+                          // Recalculate friction from Manning's n (preferred) or vice-versa
+                          const K = currentUnit === 'SI' ? 124.58 : 185;
+                          const n = parseFloat(element.data?.manningsN);
+                          if (!isNaN(n) && n > 0) {
+                            const f = (K * n * n) / Math.pow(newDiam, 1 / 3);
+                            handleChange('friction', parseFloat(f.toFixed(6)).toString());
+                          } else {
+                            const f = parseFloat(element.data?.friction);
+                            if (!isNaN(f) && f > 0) {
+                              const nNew = Math.sqrt((f * Math.pow(newDiam, 1 / 3)) / K);
+                              handleChange('manningsN', parseFloat(nNew.toFixed(6)).toString());
+                            }
+                          }
+                        }
+                      }} 
                     />
                   </div>
                 )}
