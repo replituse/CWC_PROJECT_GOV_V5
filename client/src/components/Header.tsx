@@ -32,6 +32,8 @@ import {
   Table2,
   PlayCircle,
   ShieldCheck,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { FlexTable } from "@/components/FlexTable";
 import {
@@ -119,7 +121,9 @@ export function Header({
     history,
     loadedFileHandle,
     globalUnit,
-    setGlobalUnit
+    setGlobalUnit,
+    showHoverData,
+    setShowHoverData,
   } = useNetworkStore();
 
   const [localParams, setLocalParams] = useState(computationalParams);
@@ -1070,6 +1074,18 @@ export function Header({
         </div>
 
         <div className="ml-auto flex items-center gap-2 pr-4">
+          <Button
+            variant={showHoverData ? "secondary" : "outline"}
+            size="sm"
+            onClick={() => setShowHoverData(!showHoverData)}
+            className="h-9 px-3 rounded-full font-medium shadow-sm transition-all gap-1.5"
+            title={showHoverData ? "Hide hover data" : "Show hover data"}
+            data-testid="button-toggle-hover-data"
+          >
+            {showHoverData ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+            <span className="text-xs hidden sm:inline">{showHoverData ? "Hide Data" : "Show Data"}</span>
+          </Button>
+
           <Button
             variant="default"
             size="sm"

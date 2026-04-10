@@ -18,6 +18,12 @@ export function TooltipWrapper({
   content, 
   delayDuration = 0 
 }: TooltipWrapperProps) {
+  const showHoverData = useNetworkStore(state => state.showHoverData);
+
+  if (!showHoverData) {
+    return <>{children}</>;
+  }
+
   return (
     <TooltipProvider delayDuration={delayDuration}>
       <Tooltip>

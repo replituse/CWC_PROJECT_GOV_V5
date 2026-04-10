@@ -113,6 +113,7 @@ interface NetworkState {
   projectNameError: string | null;
   loadedFileHandle: FileSystemFileHandle | null;
   globalUnit: UnitSystem;
+  showHoverData: boolean;
   nodeSelectionSet: Set<string>;
   pcharData: Record<number, PcharType>;
   history: {
@@ -145,6 +146,7 @@ interface NetworkState {
   setProjectNameError: (error: string | null) => void;
   setLoadedFileHandle: (handle: FileSystemFileHandle | null) => void;
   setGlobalUnit: (unit: UnitSystem) => void;
+  setShowHoverData: (show: boolean) => void;
   setElementUnit: (id: string, kind: 'node' | 'edge', newUnit: UnitSystem) => void;
   updateHSchedule: (number: number, points: { time: number; head: number | string }[]) => void;
   addHSchedule: (number: number) => void;
@@ -180,11 +182,16 @@ export const useNetworkStore = create<NetworkState>((set, get) => ({
   projectNameError: null,
   loadedFileHandle: null,
   globalUnit: 'FPS',
+  showHoverData: true,
   nodeSelectionSet: new Set(),
   pcharData: {},
   history: {
     past: [],
     future: [],
+  },
+
+  setShowHoverData: (show: boolean) => {
+    set({ showHoverData: show });
   },
 
   setGlobalUnit: (unit: UnitSystem) => {
