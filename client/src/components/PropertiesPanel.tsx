@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Trash2, ChevronDown, ChevronRight, Plus, CheckCircle2, BookCopy } from 'lucide-react';
+import { Trash2, ChevronDown, ChevronRight, Plus, CheckCircle2 } from 'lucide-react';
 
 function PcharEditor({ pType, activePc, updatePcharData }: {
   pType: number;
@@ -285,6 +285,20 @@ export function PropertiesPanel() {
       updateNodeData(selectedElementId, update);
     } else {
       updateEdgeData(selectedElementId, update);
+      // Real-time sync: propagate every parameter change (except label itself)
+      // to all other conduit/dummy pipe edges that share the same Label/ID.
+      if (key !== 'label') {
+        const currentLabel = (element.data?.label as string) || '';
+        if (currentLabel) {
+          edges
+            .filter(e =>
+              e.id !== selectedElementId &&
+              (e.data?.label as string) === currentLabel &&
+              (e.data?.type === 'conduit' || e.data?.type === 'dummy')
+            )
+            .forEach(e => updateEdgeData(e.id, update));
+        }
+      }
     }
   };
 
@@ -293,18 +307,6 @@ export function PropertiesPanel() {
     'variable', 'distance', 'area', 'd', 'a', 'pipeE', 'pipeWT', 'manningsN',
     'cplus', 'cminus', 'hasAddedLoss', 'includeNumSegments',
   ];
-
-  const getAvailableProfiles = () => {
-    const seen = new Set<string>();
-    return edges.filter(e => {
-      if (e.id === selectedElementId) return false;
-      if (e.data?.type !== 'conduit' && e.data?.type !== 'dummy') return false;
-      const lbl = (e.data?.label as string) || '';
-      if (!lbl || seen.has(lbl)) return false;
-      seen.add(lbl);
-      return true;
-    });
-  };
 
   const applyProfile = (sourceEdge: typeof edges[0]) => {
     const update: Record<string, any> = {};
@@ -437,46 +439,6 @@ export function PropertiesPanel() {
               </RadioGroup>
             </div>
           )}
-
-          {!isNode && (() => {
-            const profiles = getAvailableProfiles();
-            if (profiles.length === 0) return null;
-            return (
-              <div className="rounded-md border border-blue-200 bg-blue-50 p-3 space-y-2 mb-2">
-                <div className="flex items-center gap-1.5">
-                  <BookCopy className="h-3.5 w-3.5 text-blue-600 shrink-0" />
-                  <Label className="text-xs font-semibold text-blue-700">Load from Profile</Label>
-                </div>
-                <Select
-                  value=""
-                  onValueChange={(edgeId) => {
-                    const src = edges.find(e => e.id === edgeId);
-                    if (src) applyProfile(src);
-                  }}
-                >
-                  <SelectTrigger className="h-8 text-xs bg-white" data-testid="select-profile">
-                    <SelectValue placeholder="Select a saved profile…" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {profiles.map(e => (
-                      <SelectItem key={e.id} value={e.id} className="text-xs">
-                        <span className="font-medium">{e.data?.label as string}</span>
-                        <span className="ml-2 text-muted-foreground capitalize">({e.data?.type as string})</span>
-                        {(e.data?.length !== undefined || e.data?.diameter !== undefined) && (
-                          <span className="ml-1 text-muted-foreground">
-                            — L:{e.data?.length ?? '?'} D:{e.data?.diameter ?? '?'}
-                          </span>
-                        )}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-[10px] text-blue-500">
-                  Copies all parameters from an existing conduit/dummy pipe. Label stays unchanged.
-                </p>
-              </div>
-            );
-          })()}
 
           {isNode && (element.data?.type === 'node' || element.data?.type === 'junction' || element.data?.type === 'reservoir' || element.data?.type === 'surgeTank' || element.data?.type === 'flowBoundary' || element.data?.type_st) && (
             <>
